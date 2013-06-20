@@ -7,7 +7,11 @@ class Student
 
   ATTRIBUTES = []
 
-  @@db = SQLite3::Database.new "students.db"
+  DB = SQLite3::Database.new("students.db")
+
+  def self.db
+    DB
+  end
 
   def initialize
 
@@ -21,7 +25,7 @@ class Student
 
   def self.drop
     if self.table_exists?
-      @@db.execute( "DROP TABLE students" )
+      Student.db.execute( "DROP TABLE students" )
     else
       return true
     end
@@ -29,7 +33,7 @@ class Student
 
 
   def self.create_table
-    @@db.execute <<-SQL 
+    Student.db.execute <<-SQL 
       CREATE TABLE students (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       name TEXT
@@ -40,9 +44,14 @@ class Student
   def save
     # id = self.id
     # name = name.id
-    @@db.execute("INSERT INTO students (name) VALUES (?)", [@name])
+    Student.db.execute("INSERT INTO students (name) VALUES (?)", [@name])
+    self.id = self.retrieve_id
   end
 
+  def retrieve_id
+    name = self.name
+    self.id = Student.find_by_name(name).id
+  end
 
   def self.rebuild(student_array)
     student = Student.new
@@ -51,23 +60,33 @@ class Student
     return student
   end
 
-  def self.find_by_name(name)
-    student_array = @@db.execute("SELECT * FROM students WHERE id == 1").flatten
+  def self.find_by_name(student_name)
+    student_array = Student.db.execute("SELECT * FROM students WHERE name = '#{student_name}'").flatten
     rebuild(student_array)
   end
 
   def self.all
-    class_array = @@db.execute("SELECT * FROM students").flatten
-    class_array.collect{|student| rebuild(student)}
+    class_array = Student.db.execute("SELECT * FROM students")
+    class_array.collect{|student| rebuild(student) }
   end
 
-  def self.find(id)
-    # STUDENTS.select.with_index{|a, index| a if index == id}.first
+  def self.find(student_id)
+    student_array = Student.db.execute("SELECT * FROM students WHERE id = '#{student_id}'").flatten
+    rebuild(student_array)
   end
-
-
 
 end
+
+Student.drop
+Student.create_table
+
+a = Student.new
+a.name = ("Desmond")
+a.save
+
+b = Student.new
+b.name = ("Jen")
+b.save
 
 
 
